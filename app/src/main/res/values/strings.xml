@@ -8,6 +8,6 @@
         <string name="segment_photo">Segment Person</string>
     <string name="button_camera">button_camera</string>
     <string name="button_gallery">button_gallery</string>
-    <string name="button_backup" />
-    <string name="button_download" />
+    <string name="button_backup">button_backup</string>
+    <string name="button_download">button_download</string>
 </resources>
