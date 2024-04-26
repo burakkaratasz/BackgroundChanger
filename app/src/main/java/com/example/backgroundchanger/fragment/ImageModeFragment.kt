@@ -59,12 +59,12 @@ class ImageModeFragment : Fragment(), OnClickListener {
                     mode = !mode
                 }
             }
+            buttonSegment.setOnClickListener(this@ImageModeFragment)
+            buttonCamera.setOnClickListener(this@ImageModeFragment)
+            buttonBackup.setOnClickListener(this@ImageModeFragment)
+            buttonDownload.setOnClickListener(this@ImageModeFragment)
+            buttonAddGallery.setOnClickListener(this@ImageModeFragment)
         }
-        buttonSegment.setOnClickListener(this@ImageModeFragment)
-        buttonCamera.setOnClickListener(this@ImageModeFragment)
-        buttonBackup.setOnClickListener(this@ImageModeFragment)
-        buttonDownload.setOnClickListener(this@ImageModeFragment)
-        buttonAddGallery.setOnClickListener(this@ImageModeFragment)
 
         return binding.root
     }

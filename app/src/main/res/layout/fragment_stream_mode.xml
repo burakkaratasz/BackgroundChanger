@@ -7,13 +7,14 @@
     tools:context=".fragment.StreamModeFragment">
 
     <androidx.camera.view.PreviewView
+        android:id="@+id/previewCamera"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:backgroundTint="@color/white"
         app:scaleType="fitCenter"/>
 
     <com.example.backgroundchanger.utils.DrawOverlay
-        android:id="@+id/drawOverlayStream"
+        android:id="@+id/drawOverlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
