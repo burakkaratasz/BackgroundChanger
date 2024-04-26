@@ -1,60 +1,109 @@
 package com.example.backgroundchanger.fragment
 
 import android.os.Bundle
+import android.util.Log
+import android.util.Size
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.camera.core.Camera
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.Preview
+import androidx.camera.core.Preview.*
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.LifecycleOwner
 import com.example.backgroundchanger.R
+import com.example.backgroundchanger.databinding.FragmentStreamModeBinding
+import com.example.backgroundchanger.utils.DrawOverlay
+import com.example.backgroundchanger.utils.PermissionCheckerUtils
+import com.google.common.util.concurrent.ListenableFuture
+import java.lang.Exception
+import java.util.concurrent.Executors
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [StreamModeFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class StreamModeFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
+
+    private var _binding: FragmentStreamModeBinding? = null
+    private val binding get() = _binding!!
+
+    private lateinit var cameraProvider: ListenableFuture<ProcessCameraProvider>
+    private lateinit var drawOverlay: DrawOverlay
+    private lateinit var streamAnalyzer: StreamAnalyzer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
+
+        PermissionCheckerUtils.checkCameraPerm(requireContext(), requireActivity()) {
+            setupCameraProvider()
         }
     }
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_stream_mode, container, false)
+        _binding = FragmentStreamModeBinding.inflate(layoutInflater, container, false)
+        drawOverlay = binding.drawOverlay //HATA
+        drawOverlay.setWillNotDraw(false)
+        drawOverlay.setZOrderOnTop(true)
+        streamAnalyzer = StreamAnalyzer(drawOverlay)
+        return binding.root
+    }
+
+    private fun setupCameraProvider() {
+        cameraProvider = ProcessCameraProvider.getInstance(requireContext())
+        cameraProvider.addListener({
+            try {
+                val cameraProvider: ProcessCameraProvider = cameraProvider.get()
+                bindPreview(cameraProvider)
+            } catch (e: Exception) {
+                Log.e(TAG, e.printStackTrace().toString())
+            }
+        }, ContextCompat.getMainExecutor(requireContext()))
+    }
+
+    private fun bindPreview(cameraProvider: ProcessCameraProvider) {
+        val previewView = Preview.Builder().build()
+        val cameraSelector = CameraSelector.Builder()
+            .requireLensFacing(CameraSelector.LENS_FACING_FRONT)
+            .build()
+
+        previewView.setSurfaceProvider(binding.previewCamera.surfaceProvider) //HATA
+
+        val displayMetrics = resources.displayMetrics
+        val screenSize = Size(displayMetrics.widthPixels, displayMetrics.heightPixels)
+
+        val imageAnalysis = ImageAnalysis.Builder()
+            .setTargetResolution(screenSize)
+            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+            .build()
+
+        imageAnalysis.setAnalyzer(Executors.newSingleThreadScheduledExecutor(), streamAnalyzer)
+        cameraProvider.bindToLifecycle((this as LifecycleOwner), cameraSelector, imageAnalysis, previewView)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        PermissionCheckerUtils.checkCameraPerm(requireContext(), requireActivity()) {
+            setupCameraProvider()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        PermissionCheckerUtils.checkCameraPerm(requireContext(), requireActivity()) {
+            setupCameraProvider()
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment StreamModeFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            StreamModeFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
+        private const val TAG = "StreamModeFragment"
     }
 }
